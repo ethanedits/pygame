@@ -1,68 +1,34 @@
-#!/usr/bin/env python
-""" pygame.examples.overlay
+import pygame
+import win32api
+import win32gui
+import win32con
+from win32api import GetSystemMetrics
 
-The overlay module is deprecated now.
-It is an olden days way to draw video quickly.
-"""
-import sys
-import pygame as pg
-from pygame.compat import xrange_
+pygame.init() #Initializing our pygame window
+width = GetSystemMetrics(0) #Getting computers resolution width
+height = GetSystemMetrics(1) #Getting computers resolution height
+screen = pygame.display.set_mode((width, height), pygame.NOFRAME) #Creating our screen, setting it to NOFRAME so we dont see the windows default UI (Minimize, Fullscreen, Exit)
+done = False #For our while loop
 
-SR = (800, 600)
-ovl = None
+fuchsia = (255, 0, 128)  # Transparency color
 
-########################################################################
-# Simple video player
-def vPlayer(fName):
-    global ovl
-    f = open(fName, "rb")
-    fmt = f.readline().strip().decode()
-    res = f.readline().strip().decode()
-    unused_col = f.readline().strip()
-    if fmt != "P5":
-        print("Unknown format( len %d ). Exiting..." % len(fmt))
-        return
+# Set window transparency color
+hwnd = pygame.display.get_wm_info()["window"]
 
-    w, h = [int(x) for x in res.split(" ")]
-    h = int((h * 2) / 3)
-    # Read into strings
-    y = f.read(w * h)
-    u = bytes()
-    v = bytes()
-    for _ in xrange_(0, int(h / 2)):
-        u += (f.read(int(w / 2)))
-        v += (f.read(int(w / 2)))
+win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
+                       win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
+win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*fuchsia), 0, win32con.LWA_COLORKEY) #Setting window color to transparent
+win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, win32con.SWP_NOSIZE) #Setting window to always be on top
 
-    # Open overlay with the resolution specified
-    ovl = pg.Overlay(pg.YV12_OVERLAY, (w, h))
-    ovl.set_location(0, 0, w, h)
+while not done:
 
-    ovl.display((y, u, v))
-    while 1:
-        pg.time.wait(10)
-        for ev in pg.event.get():
-            if ev.type in (pg.KEYDOWN, pg.QUIT):
-                return
+  for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            done = True
+  screen.fill(fuchsia) #Setting the screen blank every frame so that the drawings will update in realtime
 
-
-def main(fname):
-    """play video file fname"""
-    pg.init()
-    try:
-        pg.display.set_mode(SR)
-        vPlayer(fname)
-    finally:
-        pg.quit()
-
-
-# Test all modules
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Example usage: python overlay.py data/yuv_1.pgm")
-    else:
-        main(sys.argv[1])
-
-# Uncomment the code below for a quick test
-# ------------------------------------------
-# if __name__ == "__main__":
-#     main('data/yuv_1.pgm')
+  #drawing loop
+  pygame.draw.rect(screen, (255, 0, 0), pygame.Rect(0, 0, 60, 60)) #Example
+  #end drawing loop
+    
+  pygame.display.update() #Updating display every frame so that the drawings will update in realtime, allowing you to change the pygame.draw objects attributes (positon, color, etc.) in realtime
